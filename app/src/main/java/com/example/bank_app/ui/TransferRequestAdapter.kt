@@ -1,4 +1,4 @@
-package com.example.bank_app.ui.notifications
+package com.example.bank_app.ui
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -52,7 +52,9 @@ class TransferRequestAdapter(
             senderName.text = request.senderName
             senderEmail.text = request.senderEmail
             amount.text = String.format("%.2f", request.amount)
-            description.text = request.description.ifEmpty { "No description" }
+
+            // ✅ FIX: Handle null description safely - THIS WAS LINE 55!
+            description.text = request.description?.ifEmpty { "No description" } ?: "No description"
 
             // Format date
             try {
@@ -76,7 +78,7 @@ class TransferRequestAdapter(
         private fun showFirstConfirmation(request: TransferRequestItem, position: Int, isAccept: Boolean) {
             val action = if (isAccept) "Accept" else "Reject"
             val message = if (isAccept) {
-                "Accept transfer of $${String.format("%.2f", request.amount)} from ${request.senderName}?"
+                "Accept transfer of $${String.format("%.2f", request.amount)} to ${request.senderName}?"
             } else {
                 "Reject transfer request from ${request.senderName}?"
             }
@@ -96,7 +98,7 @@ class TransferRequestAdapter(
         private fun showSecondConfirmation(request: TransferRequestItem, position: Int, isAccept: Boolean) {
             val action = if (isAccept) "Accept" else "Reject"
             val message = if (isAccept) {
-                "This action cannot be undone!\n\nAre you absolutely sure you want to accept $${String.format("%.2f", request.amount)} from ${request.senderName}?"
+                "This action cannot be undone!\n\nAre you absolutely sure you want to send $${String.format("%.2f", request.amount)} to ${request.senderName}?"
             } else {
                 "Are you absolutely sure you want to reject this transfer request?"
             }
@@ -135,14 +137,15 @@ class TransferRequestAdapter(
                     if (response.isSuccessful) {
                         Toast.makeText(
                             context,
-                            "Transfer accepted! $${String.format("%.2f", request.amount)} received",
+                            "Transfer accepted! $${String.format("%.2f", request.amount)} sent",
                             Toast.LENGTH_LONG
                         ).show()
                         requests.removeAt(position)
                         notifyItemRemoved(position)
                         onAccept(request, position)
                     } else {
-                        Toast.makeText(context, "Failed to accept transfer", Toast.LENGTH_SHORT).show()
+                        val errorBody = response.errorBody()?.string()
+                        Toast.makeText(context, "Failed: $errorBody", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: Exception) {
                     Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()

@@ -96,6 +96,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<androidx.cardview.widget.CardView>(R.id.notificationCard)?.setOnClickListener {
                 try {
                     navController.navigate(R.id.notificationsFragment)
+                    binding.navView.selectedItemId = R.id.notificationsFragment
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "Notifications navigation error: ${e.message}")
                 }

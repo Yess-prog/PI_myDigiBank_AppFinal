@@ -2,13 +2,13 @@ package com.example.bank_app.api
 
 import com.example.bank_app.models.LoginRequest
 import com.example.bank_app.models.LoginResponse
+import com.example.bank_app.models.RegisterRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.GET
 import retrofit2.http.Path
-import retrofit2.http.Query
 
 interface ApiService {
     // Auth endpoints
@@ -36,6 +36,13 @@ interface ApiService {
     // Card endpoints
     @GET("cards")
     suspend fun getCards(@Header("Authorization") token: String): Response<List<Card>>
+
+
+        @POST("cards/add")
+        suspend fun addCard(
+        @Header("Authorization") token: String,
+        @Body addCardRequest: AddCardRequest
+    ): Response<AddCardResponse>
 
     // Transaction endpoints
     @GET("transactions")
@@ -209,4 +216,17 @@ data class AcceptResponse(
 
 data class RejectResponse(
     val message: String
+)
+data class AddCardRequest(
+    val cardHolderName: String,
+    val cardNumber: String,
+    val expiryMonth: Int,
+    val expiryYear: Int,
+    val cvv: String
+)
+
+data class AddCardResponse(
+    val message: String,
+    val cardId: Int,
+    val cardLast4: String
 )

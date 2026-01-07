@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +20,8 @@ class HomeFragment : Fragment() {
 
     private lateinit var transactionsRecyclerView: RecyclerView
     private var isBalanceVisible = true
+    private var currentBalance = 0.0
+    private var currentCurrency = "DT"
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,6 +40,9 @@ class HomeFragment : Fragment() {
 
         // Load user account data
         loadAccountData()
+
+        // Load card data (for displaying card number)
+        loadCardData()
 
         // Load transactions
         loadTransactions()
@@ -66,7 +72,9 @@ class HomeFragment : Fragment() {
                     val accounts = response.body()
                     if (accounts != null && accounts.isNotEmpty()) {
                         val account = accounts[0] // Get first account
-                        updateBalanceUI(account.balance, account.currency)
+                        currentBalance = account.balance
+                        currentCurrency = account.currency
+                        updateBalanceUI()
                     }
                 } else {
                     Toast.makeText(
@@ -85,15 +93,57 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun updateBalanceUI(balance: Double, currency: String) {
+    private fun loadCardData() {
+        val token = PreferencesHelper.getToken(requireContext())
+        if (token.isNullOrEmpty()) {
+            return
+        }
+
+        lifecycleScope.launch {
+            try {
+                val apiService = RetrofitClient.instance
+                val response = apiService.getCards("Bearer $token")
+
+                if (response.isSuccessful) {
+                    val cards = response.body()
+                    if (cards != null && cards.isNotEmpty()) {
+                        // Display first card's last 4 digits
+                        val firstCard = cards[0]
+                        updateCardNumberUI(firstCard.cardLast4)
+                    } else {
+                        // No cards - show default
+                        updateCardNumberUI(null)
+                    }
+                }
+            } catch (e: Exception) {
+                // Silent fail for card display - not critical
+                updateCardNumberUI(null)
+            }
+        }
+    }
+
+    private fun updateBalanceUI() {
         view?.apply {
-            val balanceAmountView = findViewById<android.widget.TextView>(R.id.balanceAmount)
-            val formattedBalance = String.format("%.2f", balance)
+            val balanceAmountView = findViewById<TextView>(R.id.balanceAmount)
+            val formattedBalance = String.format("%.2f", currentBalance)
 
             if (isBalanceVisible) {
-                balanceAmountView?.text = "$currency $formattedBalance"
+                balanceAmountView?.text = "$currentCurrency $formattedBalance"
             } else {
-                balanceAmountView?.text = "$currency ****"
+                balanceAmountView?.text = "$currentCurrency ••••"
+            }
+        }
+    }
+
+    private fun updateCardNumberUI(cardLast4: String?) {
+        view?.apply {
+            val cardNumberView = findViewById<TextView>(R.id.cardNumber)
+            if (cardLast4 != null) {
+                cardNumberView?.text = "•••• •••• •••• $cardLast4"
+            } else {
+                // No card - show message or hide
+                cardNumberView?.text = "No card linked"
+                cardNumberView?.alpha = 0.6f
             }
         }
     }
@@ -101,17 +151,19 @@ class HomeFragment : Fragment() {
     private fun toggleBalanceVisibility(view: View) {
         isBalanceVisible = !isBalanceVisible
         val eyeIcon = view.findViewById<android.widget.ImageView>(R.id.eyeIcon)
-        val balanceAmountView = view.findViewById<android.widget.TextView>(R.id.balanceAmount)
 
-        // You can update the icon here if needed
-        // For now, just reload the data to show/hide balance
-        loadAccountData()
+        // Update balance display
+        updateBalanceUI()
 
         // Change eye icon appearance
         if (isBalanceVisible) {
             eyeIcon?.alpha = 1f
+            // Optionally change icon to "eye open"
+            eyeIcon?.setImageResource(R.drawable.ic_eye)
         } else {
             eyeIcon?.alpha = 0.5f
+            // Optionally change icon to "eye closed"
+            // eyeIcon?.setImageResource(R.drawable.ic_eye_off)
         }
     }
 
@@ -150,27 +202,24 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupQuickActions(view: View) {
-
         // Request Money
         view.findViewById<View>(R.id.requestAction)?.setOnClickListener {
             findNavController().navigate(R.id.requestMoneyFragment)
         }
+
         // Send Money
         view.findViewById<View>(R.id.sendAction)?.setOnClickListener {
             findNavController().navigate(R.id.sendMoneyFragment)
         }
 
-
-
-        // Replace topupAction with predictAction
+        // Income Prediction
         view.findViewById<View>(R.id.predictAction)?.setOnClickListener {
             findNavController().navigate(R.id.incomePredictionFragment)
         }
 
-        // More
+        // More - Navigate to Cards
         view.findViewById<View>(R.id.moreAction)?.setOnClickListener {
-            Toast.makeText(requireContext(), "More options clicked", Toast.LENGTH_SHORT).show()
-            // TODO: Show more options menu
+            findNavController().navigate(R.id.navigation_cards)
         }
     }
 
@@ -178,6 +227,7 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         loadAccountData()
+        loadCardData()
         loadTransactions()
     }
 }

@@ -48,17 +48,9 @@ class ProfileFragment : Fragment() {
     }
 
     private fun setupClickListeners(view: View) {
-        // Personal Information Click
-        view.findViewById<CardView>(R.id.personalInfoCard)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Personal Information clicked", Toast.LENGTH_SHORT).show()
-            // TODO: Navigate to personal info screen
-        }
 
-        // Settings Click
-        view.findViewById<CardView>(R.id.settingsCard)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Settings clicked", Toast.LENGTH_SHORT).show()
-            // TODO: Navigate to settings screen
-        }
+
+
 
         // Logout Click
         view.findViewById<CardView>(R.id.logoutCard)?.setOnClickListener {

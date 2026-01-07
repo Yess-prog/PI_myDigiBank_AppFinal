@@ -72,10 +72,13 @@ class LoginActivity : AppCompatActivity() {
             performLogin()
         }
 
-        findViewById<View>(R.id.tvSignup)?.setOnClickListener {
+        findViewById<View>(R.id.btnRegister)?.setOnClickListener {
             // Navigate to signup activity
-            Toast.makeText(this, "Sign up clicked", Toast.LENGTH_SHORT).show()
-        }
+            val intent = Intent(this, SignupActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+               }
 
         findViewById<View>(R.id.tvForgot)?.setOnClickListener {
             // Navigate to forgot password activity
